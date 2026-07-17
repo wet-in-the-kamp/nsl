@@ -18,6 +18,7 @@ use nsl_bnoc.testing.all;
 architecture arch of tb is
 
   signal clock125_s, clock625_s, reset_n_s : std_ulogic;
+  signal clock125ish_s, clock625ish_s : std_ulogic;
   signal clock125_delayed_s, clock625_delayed_s : std_ulogic;
   signal done_s : std_ulogic_vector(1 downto 0);
   signal committed_i_s1, committed_o_s1 : nsl_bnoc.committed.committed_bus;
@@ -101,8 +102,8 @@ begin
   -- Created delayed clock for SGMII driver 2
   -- This simulates having different system clocks
   -- between the two SGMII modules
-  clock125_delayed_s <= transport clock125_s after clk_delay_c;
-  clock625_delayed_s <= transport clock625_s after clk_delay_c;
+  clock125_delayed_s <= transport clock125ish_s after clk_delay_c;
+  clock625_delayed_s <= transport clock625ish_s after clk_delay_c;
 
   -- Connect the two SGMII together with propagation delay
   clk_diff_1 <= transport sgmii_m2p1.clk_m2p_diff after data_delay_c;
@@ -119,17 +120,21 @@ begin
   
   driver: nsl_simulation.driver.simulation_driver
     generic map(
-      clock_count => 2,
+      clock_count => 4,
       reset_count => 1,
       done_count => done_s'length
       )
     port map(
       clock_period(0) => 8 ns, -- 125MHz clock for GMII
-      clock_period(1) => 1600 ps, -- 625MHz clock for SGMII
+      clock_period(1) => 1600 ps, -- 625MHz clock for SGMII 1
+      clock_period(2) => 8000500 fs, --124.9921 MHz clock for SGMII 2 
+      clock_period(3) => 1600100 fs, -- 624.9609 MHz clock for SGMII 2
       reset_duration(0) => 14 ns,
       reset_n_o(0) => reset_n_s,
       clock_o(0) => clock125_s,
       clock_o(1) => clock625_s,
+      clock_o(2) => clock125ish_s,
+      clock_o(3) => clock625ish_s,      
       done_i => done_s
       );
 
