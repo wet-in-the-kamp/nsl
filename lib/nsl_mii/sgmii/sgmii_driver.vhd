@@ -18,8 +18,12 @@ entity sgmii_driver is
     );
   port (
     reset_n_i  : in std_ulogic;
-    clock125_i : in std_ulogic;
+    clock_i : in std_ulogic;
     clock625_i : in std_ulogic;
+
+    clock_rx_125_i : in std_ulogic;
+    clock_rx_625_i : in std_ulogic;
+    clock_rx_625_o : out std_ulogic;
 
     sgmii_o : out sgmii_m2p;
     sgmii_i : in  sgmii_p2m;
@@ -57,6 +61,7 @@ architecture beh of sgmii_driver is
 
   signal s_tx2enc_symbol : nsl_line_coding.ibm_8b10b.data_t;
   signal s_dec2rx_symbol : nsl_line_coding.ibm_8b10b.data_t;
+  signal s_el2rx_symbol  : nsl_line_coding.ibm_8b10b.data_t;
   signal s_ser2dec_code  : nsl_line_coding.ibm_8b10b.code_word_t;
   signal s_enc2ser_code  : nsl_line_coding.ibm_8b10b.code_word_t;
 
@@ -99,12 +104,13 @@ begin  -- architecture beh
 
   -- Component instatiation
   -- RX side --------------------------------------------------------------------------------
+  clock_rx_625_o <= s_clk_p2m_se;
+    
   sgmii_pcs_rx_1 : work.sgmii.sgmii_pcs_rx
     port map (
-      clock_i        => clock125_i,
+      clock_i        => clock_i,
       reset_n_i      => reset_n_i,
-      symbol_i       => s_dec2rx_symbol,
-      symbol_expected_o => s_symbol_expected,
+      symbol_i       => s_el2rx_symbol,
       flit_o         => s_rx_flit,
       config_valid_o => s_rx_config_valid,
       config_o       => s_rx_config,
@@ -114,7 +120,7 @@ begin  -- architecture beh
 
   rx_to_committed : work.flit.mii_flit_to_committed
     port map(
-      clock_i   => clock125_i,
+      clock_i   => clock_i,
       reset_n_i => reset_n_i,
 
       flit_i  => s_rx_flit,
@@ -128,7 +134,7 @@ begin  -- architecture beh
     generic map (
       implementation_c => "logic")
     port map (
-      clock_i           => clock125_i,
+      clock_i           => clock_rx_125_i,
       reset_n_i         => reset_n_i,
       valid_i           => '1',
       data_i            => s_ser2dec_code,
@@ -144,7 +150,7 @@ begin  -- architecture beh
       stabilization_cycle_c => 8
       )
     port map(
-      clock_i => clock125_i,
+      clock_i => clock_rx_125_i,
       reset_n_i => reset_n_i,
 
       delay_shift_o => s_delay_shift,
@@ -159,20 +165,32 @@ begin  -- architecture beh
 
   delayer: nsl_io.delay.input_delay_variable
     port map(
-      clock_i => clock125_i,
+      clock_i => clock_rx_125_i,
       reset_n_i => reset_n_i,
       mark_o => s_delay_mark,
       shift_i => s_delay_shift,
       data_i => s_data_p2m_se,
       data_o => s_delayed_data
-      );  
+      );
+
+  sgmii_elastic_buff_1: work.sgmii.sgmii_elastic_buff
+    generic map (
+      fifo_depth_c => 2048)
+    port map (
+      clk_sys_i         => clock_i,
+      clk_rx_i          => clock_rx_125_i,
+      reset_n_i         => reset_n_i,
+      symbol_i          => s_dec2rx_symbol,
+      symbol_o          => s_el2rx_symbol,
+      symbol_expected_o => s_symbol_expected
+      );
 
   serdes_ddr10_input_1 : nsl_io.serdes.serdes_ddr10_input
     generic map (
       left_to_right_c => false)
     port map (
-      bit_clock_i  => clock625_i,
-      word_clock_i => clock125_i,
+      bit_clock_i  => clock_rx_625_i,
+      word_clock_i => clock_rx_125_i,
       reset_n_i    => reset_n_i,
       serial_i     => s_delayed_data,
       parallel_o   => s_ser2dec_code,
@@ -202,11 +220,11 @@ begin  -- architecture beh
 
   -- TX side --------------------------------------------------------------------------------
 
-  s_clk_m2p_se <= clock125_i;
+  s_clk_m2p_se <= clock625_i;
 
   sgmii_pcs_tx_1 : work.sgmii.sgmii_pcs_tx
     port map (
-      clock_i       => clock125_i,
+      clock_i       => clock_i,
       reset_n_i     => reset_n_i,
       flit_i        => s_tx_flit,
       symbol_o      => s_tx2enc_symbol,
@@ -220,7 +238,7 @@ begin  -- architecture beh
       ipg_c => 96
       )
     port map(
-      clock_i   => clock125_i,
+      clock_i   => clock_i,
       reset_n_i => reset_n_i,
 
       committed_i => tx_i,
@@ -234,7 +252,7 @@ begin  -- architecture beh
     generic map (
       implementation_c => "logic")
     port map (
-      clock_i   => clock125_i,
+      clock_i   => clock_i,
       reset_n_i => reset_n_i,
       valid_i   => '1',
       data_i    => s_tx2enc_symbol,
@@ -274,7 +292,7 @@ begin  -- architecture beh
     generic map (
       link_timer_cycles_c => link_timer_c)
     port map (
-      clock_i           => clock125_i,
+      clock_i           => clock_i,
       reset_n_i         => reset_n_i,
       config_i          => "0000000000100000",  -- See IEEE 802.3 clause 37
                                                 -- Full Duplex only, no pause,

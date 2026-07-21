@@ -32,8 +32,12 @@ package sgmii is
       );
     port (
       reset_n_i    : in  std_ulogic;
-      clock125_i   : in  std_ulogic;
+      clock_i   : in  std_ulogic;
       clock625_i   : in  std_ulogic;
+
+      clock_rx_125_i : in std_ulogic;
+      clock_rx_625_i : in std_ulogic;
+      clock_rx_625_o : out std_ulogic;      
       
       sgmii_o      : out sgmii_m2p;
       sgmii_i      : in  sgmii_p2m;
@@ -98,6 +102,34 @@ package sgmii is
       tx_config_o      : out config_reg_t;
       link_up_o        : out std_ulogic;
       partner_config_o : out config_reg_t
+      );
+  end component;
+
+  component sgmii_state_tracker is
+    port (
+      clock_i           : in  std_ulogic;
+      reset_n_i         : in  std_ulogic;
+      
+      symbol_i          : in  nsl_line_coding.ibm_8b10b.data_t;
+      symbol_expected_o : out std_ulogic;
+      
+      idle_match_o      : out std_ulogic
+      );
+  end component;
+
+  component sgmii_elastic_buff is
+    generic(
+      fifo_depth_c : positive := 2000
+      );
+    port (
+      clk_sys_i : in  std_ulogic;
+      clk_rx_i  : in  std_ulogic;
+
+      reset_n_i : in std_ulogic;
+      
+      symbol_i  : in  nsl_line_coding.ibm_8b10b.data_t;
+      symbol_o  : out nsl_line_coding.ibm_8b10b.data_t;
+      symbol_expected_o : out std_ulogic
       );
   end component;
 

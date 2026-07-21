@@ -10,6 +10,7 @@ root:
     - nsl_mii.testing
     - nsl_bnoc.committed
     - nsl_bnoc.testing
+    - nsl_clocking.pll
   sources:
     - file_type: vhdl
       files:

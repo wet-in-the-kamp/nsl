@@ -5,7 +5,7 @@ use ieee.numeric_std.all;
 entity tb is
 end tb;
 
-library nsl_simulation, nsl_bnoc, nsl_mii, nsl_data, nsl_io;
+library nsl_simulation, nsl_bnoc, nsl_mii, nsl_data, nsl_io, nsl_clocking;
 use nsl_mii.mii.all;
 use nsl_mii.sgmii.all;
 use nsl_mii.link.all;
@@ -14,6 +14,7 @@ use nsl_mii.testing.all;
 use nsl_simulation.logging.all;
 use nsl_data.bytestream.all;
 use nsl_bnoc.testing.all;
+use nsl_clocking.pll.all;
 
 architecture arch of tb is
 
@@ -29,6 +30,16 @@ architecture arch of tb is
   signal clk_diff_2 : nsl_io.diff.diff_pair;
   signal data_diff_1 : nsl_io.diff.diff_pair;
   signal data_diff_2 : nsl_io.diff.diff_pair;
+  signal clk_rx_625_1_s : std_ulogic;
+  signal clk_rx_125_pll1_s : std_ulogic;
+  signal clk_rx_625_pll1_s : std_ulogic;
+  signal clk_rx_625_2_s : std_ulogic;
+  signal clk_rx_125_pll2_s : std_ulogic;
+  signal clk_rx_625_pll2_s : std_ulogic;
+  signal pll1_locked_s : std_ulogic;
+  signal pll2_locked_s : std_ulogic;
+  signal pll3_locked_s : std_ulogic;
+  signal pll4_locked_s : std_ulogic;    
 
   constant frame_tx_1_c : byte_string := from_hex(
     "02000000feed00deadbeef"
@@ -70,8 +81,11 @@ begin
       )
     port map (
       reset_n_i    => reset_n_s,
-      clock125_i      => clock125_s,
-      clock625_i      => clock625_s,      
+      clock_i      => clock125_s,
+      clock625_i      => clock625_s,
+      clock_rx_125_i => clk_rx_125_pll1_s,
+      clock_rx_625_i => clk_rx_625_pll1_s,
+      clock_rx_625_o => clk_rx_625_1_s,
       sgmii_o      => sgmii_m2p1,
       sgmii_i      => sgmii_p2m1,
       link_speed_i => LINK_SPEED_1000,
@@ -81,6 +95,28 @@ begin
       tx_o => committed_o_s1.ack
       );
 
+  pll_basic_1: nsl_clocking.pll.pll_basic
+    generic map (
+      input_hz_c   => 625e6,
+      output_hz_c  => 125e6,
+      hw_variant_c => "simulation()")
+    port map (
+      clock_i   => clk_rx_625_1_s,
+      clock_o   => clk_rx_125_pll1_s,
+      reset_n_i => reset_n_s,
+      locked_o  => pll1_locked_s);
+
+  pll_basic_2: nsl_clocking.pll.pll_basic
+    generic map (
+      input_hz_c   => 625e6,
+      output_hz_c  => 625e6,
+      hw_variant_c => "simulation()")
+    port map (
+      clock_i   => clk_rx_625_1_s,
+      clock_o   => clk_rx_625_pll1_s,
+      reset_n_i => reset_n_s,
+      locked_o  => pll2_locked_s);  
+
   -- SGMII number 2
   sgmii_driver_2: nsl_mii.sgmii.sgmii_driver
     generic map (
@@ -88,8 +124,11 @@ begin
       )    
     port map (
       reset_n_i    => reset_n_s,
-      clock125_i      => clock125_delayed_s,
-      clock625_i      => clock625_delayed_s,      
+      clock_i      => clock125_delayed_s,
+      clock625_i      => clock625_delayed_s,
+      clock_rx_125_i => clk_rx_125_pll2_s,
+      clock_rx_625_i => clk_rx_625_pll2_s,
+      clock_rx_625_o => clk_rx_625_2_s,      
       sgmii_o      => sgmii_m2p2,
       sgmii_i      => sgmii_p2m2,
       link_speed_i => LINK_SPEED_1000,
@@ -98,6 +137,28 @@ begin
       tx_i => committed_o_s2.req,
       tx_o => committed_o_s2.ack
       );
+
+  pll_basic_3: nsl_clocking.pll.pll_basic
+    generic map (
+      input_hz_c   => 625e6,
+      output_hz_c  => 125e6,
+      hw_variant_c => "simulation()")
+    port map (
+      clock_i   => clk_rx_625_2_s,
+      clock_o   => clk_rx_125_pll2_s,
+      reset_n_i => reset_n_s,
+      locked_o  => pll3_locked_s);
+
+  pll_basic_4: nsl_clocking.pll.pll_basic
+    generic map (
+      input_hz_c   => 625e6,
+      output_hz_c  => 625e6,
+      hw_variant_c => "simulation()")
+    port map (
+      clock_i   => clk_rx_625_2_s,
+      clock_o   => clk_rx_625_pll2_s,
+      reset_n_i => reset_n_s,
+      locked_o  => pll4_locked_s);    
 
   -- Created delayed clock for SGMII driver 2
   -- This simulates having different system clocks
