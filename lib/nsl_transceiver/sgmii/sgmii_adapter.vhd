@@ -46,10 +46,11 @@ architecture beh of sgmii_adapter is
 begin
 
   -- IBUFDS ---------------------------------------------------------------------------
-  IBUFDS_GTE2_inst : ibufds_gte2
+  IBUFDS_GTE4_inst : ibufds_gte4
     generic map (
-      CLKCM_CFG   => TRUE,
-      CLKRCV_TRST => TRUE
+      REFCLK_EN_TX_PATH => '0',
+      REFCLK_HROW_CK_SEL => "00",
+      REFCLK_ICNTL_RX =>  "00"
       )
     port map (
       O   => s_gt_ref_clk_se,

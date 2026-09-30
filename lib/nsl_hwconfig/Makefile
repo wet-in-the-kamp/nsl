@@ -1,10 +1,17 @@
 ifneq ($(filter xilinx,$(hwdep)),)
+
 ifneq ($(filter xc6%,$(target_part)),)
 packages += xc6_config
 endif
+
 ifneq ($(filter xc7%,$(target_part)),)
 packages += xc7_config
 endif
+
+ifneq ($(filter zynqusp%,$(family)),)
+packages += xc7_config # FIXME: add new config for ZynqUSP
+endif
+
 endif
 
 ifneq ($(filter gowin,$(hwdep)),)
