@@ -728,7 +728,7 @@ begin
           )
         port map(
           clock_i   => s_parallel_clock_buff,
-          reset_n_i => tx_m_i(lane_idx).control(data_byte_count_c * 2),
+          reset_n_i => s_parallel_reset_sync_n,
 
           delay_mark_i  => '1',
           serdes_mark_i => '1',
