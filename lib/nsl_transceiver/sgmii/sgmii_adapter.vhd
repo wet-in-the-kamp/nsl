@@ -73,7 +73,6 @@ begin
 
   s_tx_m.control(0) <= sgmii_i.data_m2p_symbol.control;
   s_tx_m.data(0)    <= sgmii_i.data_m2p_symbol.data;
-  s_tx_m.control(2) <= sgmii_i.sys_reset_n;
   s_tx_m.control(3) <= sgmii_i.align_rst;
   s_tx_m.control(1) <= sgmii_i.valid_symbol;
 
