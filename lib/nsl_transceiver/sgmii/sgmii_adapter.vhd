@@ -70,6 +70,7 @@ begin
   sgmii_o.code_err        <= rx_m_i.status(2);
   sgmii_o.disparity_err   <= rx_m_i.status(1);
   sgmii_o.align_ready     <= rx_m_i.status(3);
+  sgmii_o.clk_cor         <= rx_m_i.status(5);
 
   s_tx_m.control(0) <= sgmii_i.data_m2p_symbol.control;
   s_tx_m.data(0)    <= sgmii_i.data_m2p_symbol.data;
