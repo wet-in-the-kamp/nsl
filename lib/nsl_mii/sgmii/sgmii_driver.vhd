@@ -119,6 +119,7 @@ begin  -- architecture beh
       reset_n_i     => reset_n_i,
       flit_i        => s_tx_flit,
       symbol_o      => sgmii_o.data_m2p_symbol,
+      disparity_o   => sgmii_o.tx_disparity,
       send_config_i => s_tx_send_config,
       config_i      => s_tx_config,
       link_up_i     => s_link_up
