@@ -676,7 +676,7 @@ begin
       s_cdr_hold                                                                      <= '0';
       rx_m_o(lane_idx).status(data_byte_count_c * 4 - 1 downto data_byte_count_c * 3) <= s_align_ready;
 
-      aligner : nsl_io.delay.input_delay_aligner_slow
+      aligner : nsl_io.delay.input_delay_aligner
         generic map(
           stabilization_delay_c => 300,
           stabilization_cycle_c => 300
